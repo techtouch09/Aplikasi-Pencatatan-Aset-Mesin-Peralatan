@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pencatatan Aset Mesin & Peralatan</title>
+    <!-- Library untuk cetak PDF dan Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- File CSS terpisah -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Halaman Login -->
+<div id="loginPage" class="login-page">
+    <div class="login-container">
+        <h2>Login Aplikasi</h2>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Masukkan username">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Masukkan password">
+        </div>
+        <button class="btn btn-primary" onclick="login()">Masuk</button>
+    </div>
+</div>
+
+<!-- Halaman Utama -->
+<div id="mainPage" class="hidden">
+    <header class="app-header">
+        <h1>APLIKASI PENCATATAN ASET MESIN & PERALATAN</h1>
+        <nav class="nav-menu">
+            <a href="#" onclick="tampilkanHalaman('dataAset')">Data Barang</a>
+            <a href="#" onclick="tampilkanHalaman('peminjaman')">Peminjaman</a>
+            <a href="#" onclick="tampilkanHalaman('pengembalian')">Pengembalian</a>
+            <a href="#" onclick="tampilkanHalaman('laporan')">Laporan</a>
+            <a href="#" onclick="keluar()">Keluar</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- Halaman Data Barang -->
+        <div id="dataAset" class="halaman">
+            <h2>Data Aset Mesin & Peralatan</h2>
+            <button class="btn btn-tambah" onclick="bukaFormTambah()">+ Tambah Aset Baru</button>
+            
+            <div class="pencarian">
+                <input type="text" id="kataKunci" placeholder="Cari kode / nama / merk / nomor mesin..." onkeyup="cariAset()">
+            </div>
+
+            <div class="table-wrapper">
+                <table id="tabelAset">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Tanggal Input</th>
+                            <th>Kode Aset</th>
+                            <th>Nama Aset</th>
+                            <th>Jenis Mesin</th>
+                            <th>Merk</th>
+                            <th>Nomor Seri</th>
+                            <th>Kapasitas</th>
+                            <th>Jumlah Total</th>
+                            <th>Dipinjam</th>
+                            <th>Sisa Stok</th>
+                            <th>Kondisi</th>
+                            <th>Lokasi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiTabel"></tbody>
+                </table>
+            </div>
+
+            <!-- Tombol Cetak Keseluruhan -->
+            <div class="btn-group" style="margin-top: 20px;">
+                <button type="button" class="btn btn-cetak" onclick="cetakLaporanAsetPDF()">Cetak Semua (PDF)</button>
+                <button type="button" class="btn btn-excel" onclick="cetakLaporanAsetExcel()">Export Semua (Excel)</button>
+            </div>
+        </div>
+
+        <!-- Form Tambah / Edit Aset -->
+        <div id="formAset" class="halaman hidden">
+            <h3 id="judulForm">Tambah Aset Mesin Baru</h3>
+            <div class="form-container">
+                <div class="form-group">
+                    <label>Kode Aset</label>
+                    <input type="text" id="kodeAset" placeholder="Contoh: AST-MES-001 / 4 inch" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama Aset</label>
+                    <input type="text" id="namaAset" placeholder="Contoh: Mesin Gerinda" required>
+                </div>
+                <div class="form-group">
+                    <label>Jenis Mesin</label>
+                    <input type="text" id="jenisMesin" placeholder="Contoh: Listrik, Bensin" required>
+                </div>
+                <div class="form-group">
+                    <label>Merk</label>
+                    <input type="text" id="merk" placeholder="Contoh: Makita, Bosch" required>
+                </div>
+                <div class="form-group">
+                    <label>Nomor Mesin / Seri</label>
+                    <input type="text" id="nomorMesin" placeholder="Nomor identitas pabrik">
+                </div>
+                <div class="form-group">
+                    <label>Kapasitas / Spesifikasi</label>
+                    <input type="text" id="kapasitas" placeholder="Contoh: 5.5 Ampere, 10 PK">
+                </div>
+                <div class="form-group">
+                    <label>Kondisi Aset</label>
+                    <select id="kondisi">
+                        <option value="Baik">Baik</option>
+                        <option value="Cukup Baik">Cukup Baik</option>
+                        <option value="Rusak Ringan">Rusak Ringan</option>
+                        <option value="Rusak Berat">Rusak Berat</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Lokasi Penyimpanan</label>
+                    <input type="text" id="lokasi" placeholder="Contoh: Gudang Utama - Rak B2">
+                </div>
+                <div class="form-group">
+                    <label>Jumlah Tersedia</label>
+                    <input type="number" id="jumlah" min="1" value="1" required>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="simpanAset()">Simpan Data</button>
+                    <button type="button" class="btn btn-batal" onclick="tutupForm()">Batal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Halaman Peminjaman -->
+        <div id="peminjaman" class="halaman">
+            <h2>Data Peminjaman</h2>
+            <button class="btn btn-tambah" onclick="bukaFormPinjam()">+ Tambah Peminjaman</button>
+
+            <div id="formPinjam" class="form-container hidden">
+                <h3>Form Peminjaman Barang</h3>
+                <div class="form-group">
+                    <label>Pilih Barang</label>
+                    <select id="pilihAset" onchange="tampilkanInfoAset()">
+                        <option value="">-- Pilih Barang Tersedia --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nama & Spesifikasi</label>
+                    <input type="text" id="infoNamaAset" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Sisa Stok Tersedia</label>
+                    <input type="number" id="infoStok" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Nama Peminjam</label>
+                    <input type="text" id="namaPeminjam" placeholder="Masukkan nama peminjam" required>
+                </div>
+                <div class="form-group">
+                    <label>Keperluan Penggunaan</label>
+                    <input type="text" id="keperluan" placeholder="Contoh: Perbaikan mesin, Las" required>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah Dipinjam</label>
+                    <input type="number" id="jmlPinjam" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Pinjam</label>
+                    <input type="date" id="tglPinjam" required>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="prosesPinjam()">Proses Peminjaman</button>
+                    <button type="button" class="btn btn-batal" onclick="tutupFormPinjam()">Batal</button>
+                </div>
+            </div>
+
+            <div class="pencarian" style="margin-top:20px;">
+                <input type="text" id="cariPinjam" placeholder="Cari kode / nama / peminjam / keperluan..." onkeyup="cariDataPinjam()">
+            </div>
+            <div class="table-wrapper">
+                <table id="tabelPeminjaman">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Tanggal Pinjam</th>
+                            <th>Kode</th>
+                            <th>Nama Barang</th>
+                            <th>Peminjam</th>
+                            <th>Keperluan</th>
+                            <th>Jumlah</th>
+                            <th>Sudah Kembali</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiTabelPinjam"></tbody>
+                </table>
+            </div>
+
+            <!-- Tombol Cetak Keseluruhan -->
+            <div class="btn-group" style="margin-top: 20px;">
+                <button type="button" class="btn btn-cetak" onclick="cetakLaporanPinjamPDF()">Cetak Semua (PDF)</button>
+                <button type="button" class="btn btn-excel" onclick="cetakLaporanPinjamExcel()">Export Semua (Excel)</button>
+            </div>
+        </div>
+
+        <!-- Halaman Pengembalian -->
+        <div id="pengembalian" class="halaman hidden">
+            <h2>Data Pengembalian</h2>
+            <button class="btn btn-tambah" onclick="bukaFormKembali()">+ Tambah Pengembalian</button>
+
+            <div id="formKembali" class="form-container hidden">
+                <h3>Form Pengembalian Barang</h3>
+                <div class="form-group">
+                    <label>Pilih Peminjaman</label>
+                    <select id="pilihPinjam" onchange="tampilkanInfoPinjam()">
+                        <option value="">-- Pilih Barang yang Dipinjam --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Detail Barang</label>
+                    <input type="text" id="infoDetailPinjam" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Nama Peminjam</label>
+                    <input type="text" id="infoPeminjam" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Keperluan</label>
+                    <input type="text" id="infoKeperluan" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah Masih Dipinjam</label>
+                    <input type="number" id="infoJumlahPinjam" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah Dikembalikan</label>
+                    <input type="number" id="jmlKembali" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Kondisi Saat Kembali</label>
+                    <select id="kondisiKembali" required>
+                        <option value="Baik">Baik</option>
+                        <option value="Cukup Baik">Cukup Baik</option>
+                        <option value="Rusak Ringan">Rusak Ringan</option>
+                        <option value="Rusak Berat">Rusak Berat</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Keterangan</label>
+                    <input type="text" id="keteranganKembali" placeholder="Opsional">
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Kembali</label>
+                    <input type="date" id="tglKembali" required>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="prosesKembali()">Proses Pengembalian</button>
+                    <button type="button" class="btn btn-batal" onclick="tutupFormKembali()">Batal</button>
+                </div>
+            </div>
+
+            <div class="pencarian" style="margin-top:20px;">
+                <input type="text" id="cariKembali" placeholder="Cari kode / nama / peminjam..." onkeyup="cariDataKembali()">
+            </div>
+            <div class="table-wrapper">
+                <table id="tabelPengembalian">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Tanggal Pinjam</th>
+                            <th>Tanggal Kembali</th>
+                            <th>Kode</th>
+                            <th>Nama Barang</th>
+                            <th>Peminjam</th>
+                            <th>Keperluan</th>
+                            <th>Jumlah Pinjam</th>
+                            <th>Jumlah Kembali</th>
+                            <th>Kondisi</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiTabelKembali"></tbody>
+                </table>
+            </div>
+
+            <!-- Tombol Cetak Keseluruhan -->
+            <div class="btn-group" style="margin-top: 20px;">
+                <button type="button" class="btn btn-cetak" onclick="cetakLaporanKembaliPDF()">Cetak Semua (PDF)</button>
+                <button type="button" class="btn btn-excel" onclick="cetakLaporanKembaliExcel()">Export Semua (Excel)</button>
+            </div>
+        </div>
+
+        <!-- Halaman Laporan -->
+        <div id="laporan" class="halaman hidden">
+            <h2>Laporan Pencatatan Aset</h2>
+            
+            <!-- Filter Tanggal -->
+            <div class="filter-laporan" style="display: flex; gap: 20px; align-items: end; flex-wrap: wrap; margin-bottom: 25px;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #333;">Tanggal Mulai</label>
+                    <input type="date" id="tglMulai" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #333;">Tanggal Sampai</label>
+                    <input type="date" id="tglSampai" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                </div>
+            </div>
+        
+           <!-- Tombol Cetak Keseluruhan -->
+<div class="kotak-cetak" style="padding: 25px; background: #f8f9fa; border-radius: 8px; text-align: center; border: 1px solid #e9ecef; max-width: 520px; margin: 0 auto; position: relative; z-index: 10;">
+    <h4 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 17px;">📑 Cetak Semua Data Sekaligus</h4>
+    <p style="font-size: 14px; color: #666; margin-bottom: 22px; line-height: 1.5;">
+        Hasil cetakan berisi Data Aset, Peminjaman, dan Pengembalian dalam satu file lengkap sesuai periode yang dipilih
+    </p>
+    <!-- Tombol dengan z-index lebih tinggi agar bisa diklik -->
+    <button type="button" class="btn btn-cetak" onclick="cetakSemuaDataPDF()" style="margin: 0 8px; padding: 10px 28px; background-color: #0d6efd; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; position: relative; z-index: 11;">
+        Cetak PDF
+    </button>
+    <button type="button" class="btn btn-excel" onclick="cetakSemuaDataExcel()" style="margin: 0 8px; padding: 10px 28px; background-color: #198754; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; position: relative; z-index: 11;">
+        Export Excel
+    </button>
+</div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
